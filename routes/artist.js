@@ -1,7 +1,7 @@
 /** Importación de Módulos **/
 var express = require('express');
 var router = express.Router();
-var request = require('request');
+var request = require('sync-request');
 var cheerio = require('cheerio');
 
 
@@ -22,7 +22,7 @@ router.get('/', function(req, res, next) {
   // Array con los artistas recibidos del parseo de la wikipedia
   var arrArtistas = fnObtenerArtistas(arrNombreArtWiki);
   // Envío de Array a la vista
-  res.render('artist',arrArtistas);
+  res.render('artist', {artistas:arrArtistas});
 
   /***
   * TSUNAMI DE FUNCIONES
@@ -37,9 +37,8 @@ router.get('/', function(req, res, next) {
     var arrUrls = fnFormatearURLWiki(arrNombres);
     var arrWikiParse = fnObtenerWikiParse(arrUrls);
     //var arrWikiHTML = fnObtenerWikiHTMLText(arrWikiParse);
-    //var arrArtistas = fnObtenerListaArtistas(arrWikiHTML);
-    //console.log(arrWikiParse);
-    return (arrWikiParse);
+    var arrArtistas = fnObtenerListaArtistas(arrWikiParse);
+    return (arrArtistas);
     }
     /**
      * Prepara las URL para las peticiones a la API de wikipedia
@@ -48,7 +47,7 @@ router.get('/', function(req, res, next) {
      */
   function fnFormatearURLWiki(arrNombres) {
       var pre = 'https://en.wikipedia.org/w/api.php?action=parse&format=json&page=';
-      var post= '&prop=text';
+      var post= '&prop=text&mobileformat=';
       for (var i = 0; i < arrNombres.length; i++) {
         arrNombres[i]=pre+arrNombres[i]+post;
       }
@@ -61,41 +60,61 @@ router.get('/', function(req, res, next) {
      */
   function fnObtenerWikiParse(arrUrls) {
     var arrWikiParse = [];
+
     for (var i = 0; i < arrUrls.length; i++) {
-      request(arrUrls[i], function (error, response, body){
-        if (!error && response.statusCode == 200) {
-          var jsonBody = JSON.parse(body);
-        }
-      })
-    }
-    console.log(arrWikiParse);
+        var res = request('GET',arrUrls[i]);
+        var jp = JSON.parse(res.getBody());
+        arrWikiParse.push(jp.parse.text['*']);
+      }
     return(arrWikiParse);
   }
   /**
    * Obtiene cuerpo text html de la página consultada en la wikipedia
    * @param  {array String} arrWikiParse Array con los Json respuesta de la api de la Wiki
    * @return {String}              String con código html de la consulta
-   */
+
   function fnObtenerWikiHTMLText(arrWikiParse) {
-    console.log(arrWikiParse);
-    var strHTMLWiki ='';
+    var strHTMLWiki =[];
     for (var i = 0; i < arrWikiParse.length; i++) {
-      strHTMLWiki += Object.keys(arrWikiParse[i]);
+      strHTMLWiki +=arrWikiParse[i];
     }
     return (strHTMLWiki);
   }
+     */
   /**
    * Obtiene lista de artistas como una array de texto
    * @param  {String} strHTMLWiki String con todo el codigo html reunido
    * @return {array String}             Array con los nombres de los artistas
    */
-  function fnObtenerListaArtistas(strHTMLWiki) {
+  function fnObtenerListaArtistas(arrWikiParse) {
+
     var arrArtistas = [];
-    var $ = cheerio.load(strHTMLWiki);
-    $('li').each(function(){
-      arrArtistas.push($(this).text);
-    });
-    return (arrArtistas);
+    for (var i = 0; i < arrWikiParse.length; i++) {
+      var $ = cheerio.load(arrWikiParse[i]);
+
+      // Quito los elementos sobrantes
+      $('h2').remove();
+      $('sup').remove();
+      $('ol').remove();
+      $('#toc').remove();
+      $('.reflist').remove();
+      $('.navbox').remove();
+
+      // La pagina de artistas individuales (3) es distinta
+      if(i!==3){
+        $('table').remove();
+        $('li').find('a').each(function(){
+            arrArtistas.push($(this).text().toUpperCase());
+          });
+      }
+      else {
+
+        $('li').each(function(){
+            arrArtistas.push($(this).text().toUpperCase());
+          });
+      }
+    }
+    return (arrArtistas.sort());
   }
 });
 

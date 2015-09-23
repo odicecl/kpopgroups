@@ -36,7 +36,6 @@ router.get('/', function(req, res, next) {
   function fnObtenerArtistas(arrNombres) {
     var arrUrls = fnFormatearURLWiki(arrNombres);
     var arrWikiParse = fnObtenerWikiParse(arrUrls);
-    //var arrWikiHTML = fnObtenerWikiHTMLText(arrWikiParse);
     var arrArtistas = fnObtenerListaArtistas(arrWikiParse);
     return (arrArtistas);
     }
@@ -68,19 +67,6 @@ router.get('/', function(req, res, next) {
       }
     return(arrWikiParse);
   }
-  /**
-   * Obtiene cuerpo text html de la página consultada en la wikipedia
-   * @param  {array String} arrWikiParse Array con los Json respuesta de la api de la Wiki
-   * @return {String}              String con código html de la consulta
-
-  function fnObtenerWikiHTMLText(arrWikiParse) {
-    var strHTMLWiki =[];
-    for (var i = 0; i < arrWikiParse.length; i++) {
-      strHTMLWiki +=arrWikiParse[i];
-    }
-    return (strHTMLWiki);
-  }
-     */
   /**
    * Obtiene lista de artistas como una array de texto
    * @param  {String} strHTMLWiki String con todo el codigo html reunido

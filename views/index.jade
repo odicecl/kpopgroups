@@ -1,5 +1,6 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  h1 Base de Datos de Artistas y Grupos K-Pop
+  form(method='post', action='artist')
+    input(type='submit', value='Refrescar Base de Datos desde Wiki')
